@@ -226,9 +226,10 @@ type Catagories struct {
 // Set unused filters to -1 for ints and "" for strings
 func (icofdr *Iconfinder) ListAllCategories(Count int32, After string) (*Catagories, error) {
 	var reqstr string = apiuri + "categories"
-	if Count == -1 || len(After) != 0 {
+	if Count != -1 || len(After) != 0 {
 		reqstr += "?"
 	}
+
 	prefix := false
 	if Count != -1 {
 		if Count > 100 || Count < 0 {
@@ -365,7 +366,7 @@ func (icofdr *Iconfinder) ListIconSetsOfStyle(StyleIdentifier string, Count int3
 	var reqstr string = apiuri + "styles/" + StyleIdentifier + "/iconsets"
 
 	// Check and apply filters to strings
-	if Count == -1 || After == -1 || Premium == -1 || Vector == -1 || len(Licence) != 0 {
+	if Count != -1 || After != -1 || Premium != -1 || Vector != -1 || len(Licence) != 0 {
 		reqstr += "?"
 	}
 	prefix := false
@@ -436,7 +437,7 @@ func (icofdr *Iconfinder) ListIconSetsOfAuthor(AuthorID int32, Count int32, Afte
 	var reqstr string = apiuri + "authors/" + strconv.Itoa(int(AuthorID)) + "/iconsets"
 
 	// Check and apply filters to strings
-	if Count == -1 || After == -1 || Premium == -1 || Vector == -1 || len(Licence) != 0 {
+	if Count != -1 || After != -1 || Premium != -1 || Vector != -1 || len(Licence) != 0 {
 		reqstr += "?"
 	}
 	prefix := false
@@ -507,7 +508,7 @@ func (icofdr *Iconfinder) ListIconSetsOfUser(UserID string, Count int32, After i
 	var reqstr string = apiuri + "users/" + UserID + "/iconsets"
 
 	// Check and apply filters to strings
-	if Count == -1 || After == -1 || Premium == -1 || Vector == -1 || len(Licence) != 0 {
+	if Count != -1 || After != -1 || Premium != -1 || Vector != -1 || len(Licence) != 0 {
 		reqstr += "?"
 	}
 	prefix := false
@@ -578,7 +579,7 @@ func (icofdr *Iconfinder) ListIconSetsOfCategory(CatagoryID string, Count int32,
 	var reqstr string = apiuri + "categories/" + CatagoryID + "/iconsets"
 
 	// Check and apply filters to strings
-	if Count == -1 || After == -1 || Premium == -1 || Vector == -1 || len(Licence) != 0 {
+	if Count != -1 || After != -1 || Premium != -1 || Vector != -1 || len(Licence) != 0 {
 		reqstr += "?"
 	}
 
@@ -634,11 +635,268 @@ func (icofdr *Iconfinder) ListIconSetsOfCategory(CatagoryID string, Count int32,
 	defer resp.Body.Close()
 	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 
-	bodyString := string(bodyBytes)
-	fmt.Println("API Response as String:\n" + bodyString)
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
 
 	var nwicosets IconSets
 	json.Unmarshal(bodyBytes, &nwicosets)
 
 	return &nwicosets, nil
+}
+
+// ListPublicIconSets List all public icon sets in descending order of when they were published.
+// Count is a range of 0 - 100 or -1
+// Set unused filters to -1 for ints and "" for strings
+func (icofdr *Iconfinder) ListPublicIconSets(Count int32, After int32, Premium int8, Vector int8, Licence string) (*IconSets, error) {
+	var reqstr string = apiuri + "iconsets"
+
+	// Check and apply filters to strings
+	if Count != -1 || After != -1 || Premium != -1 || Vector != -1 || len(Licence) != 0 {
+		reqstr += "?"
+	}
+
+	prefix := false
+	if Count != -1 {
+		if Count > 100 || Count < 0 {
+			return nil, errors.New("OutOfBound")
+		}
+		reqstr += "count=" + strconv.Itoa(int(Count))
+		prefix = true
+	}
+
+	if After != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "after=" + strconv.Itoa(int(After))
+		prefix = true
+	}
+
+	if Premium != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "premium=" + strconv.Itoa(int(Premium))
+		prefix = true
+	}
+
+	if Vector != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "vector=" + strconv.Itoa(int(Vector))
+		prefix = true
+	}
+
+	if len(Licence) > 0 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "Licence=" + Licence
+	}
+
+	req, err := http.NewRequest("GET", reqstr, nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwicosets IconSets
+	json.Unmarshal(bodyBytes, &nwicosets)
+
+	return &nwicosets, nil
+}
+
+// Image Holds an images URL's and its format
+type Image struct {
+	PreviewURL  string `json:"preview_url"`
+	Format      string `json:"format"`
+	DownloadURL string `json:"download_url"`
+}
+
+// Sizes Holds all images formats and definse the size of the format
+type Sizes struct {
+	SizeHeight  int     `json:"size_height"`
+	Formats     []Image `json:"formats"`
+	Size        int     `json:"size"`
+	SizeWidth   int     `json:"size_width"`
+	TargetSizes []int   `json:"target_sizes"`
+}
+
+// Icon Holds details about an icon
+type Icon struct {
+	IconID      int        `json:"icon_id"`
+	Tags        []string   `json:"tags"`
+	Style       []Style    `json:"Styles"`
+	Catagories  []Category `json:"categories"`
+	IsPremium   bool       `json:"is_premium"`
+	Prices      []Price    `json:"prices"`
+	IsPurchased bool       `json:"is_purchased"`
+	PublishedAt string     `json:"published_at"`
+	Type        int        `json:"type"`
+	IconSet     IconSet    `json:"iconset"`
+	IconGlyph   bool       `json:"is_icon_glyph"`
+	Containers  []Image    `json:"containers"`
+	Vectors     []Sizes    `json:"vector_sizes"`
+	Rasters     []Sizes    `json:"raster_sizes"`
+}
+
+// Icons holds multiple icon s
+type Icons struct {
+	TotalCount int    `json:"total_count"`
+	Icons      []Icon `json:"icons"`
+}
+
+// IconsInSet lists all icons in a set
+// Count is a range of 0 - 100 or -1
+// Set unused filters to -1 for ints and "" for strings
+func (icofdr *Iconfinder) IconsInSet(IconsetID int32, Query string, Count int32, Offset int32, Vector int8) (*Icons, error) {
+	var reqstr string = apiuri + "iconsets/" + strconv.Itoa(int(IconsetID)) + "/icons"
+
+	// Check and apply filters to strings
+	if Count != -1 || Offset != -1 || Vector != -1 || len(Query) != 0 {
+		reqstr += "?"
+	}
+
+	prefix := false
+	if Count != -1 {
+		if Count > 100 || Count < 0 {
+			return nil, errors.New("OutOfBound")
+		}
+		reqstr += "count=" + strconv.Itoa(int(Count))
+		prefix = true
+	}
+
+	if Offset != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "offset=" + strconv.Itoa(int(Offset))
+		prefix = true
+	}
+
+	if Vector != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "vector=" + strconv.Itoa(int(Vector))
+		prefix = true
+	}
+
+	if len(Query) > 0 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "query=" + Query
+	}
+	fmt.Println(reqstr)
+	req, err := http.NewRequest("GET", reqstr, nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwicos Icons
+	json.Unmarshal(bodyBytes, &nwicos)
+
+	return &nwicos, nil
+}
+
+// GetIconDetails gets all details for a specific icon
+func (icofdr *Iconfinder) GetIconDetails(IconID int32) *Icon {
+	req, err := http.NewRequest("GET", apiuri+"icons/"+strconv.Itoa(int(IconID)), nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwico Icon
+	json.Unmarshal(bodyBytes, &nwico)
+
+	return &nwico
+}
+
+// SearchIcons Look for a icon
+// Count is a range of 0 - 100 or -1
+// Set unused filters to -1 for ints and "" for strings
+func (icofdr *Iconfinder) SearchIcons(Query string, Count int32, Offset int32, Premium int8, Vector int8, Licence string, Category string, Style string) (*Icons, error) {
+	var reqstr string = apiuri + "icons/Search?query=" + Query
+
+	if Count != -1 {
+		if Count > 100 || Count < 0 {
+			return nil, errors.New("OutOfBound")
+		}
+		reqstr += "&count=" + strconv.Itoa(int(Count))
+	}
+
+	if Offset != -1 {
+		reqstr += "&offset=" + strconv.Itoa(int(Offset))
+	}
+
+	if Premium != -1 {
+		reqstr += "&premium=" + strconv.Itoa(int(Premium))
+	}
+
+	if Vector != -1 {
+		reqstr += "&vector=" + strconv.Itoa(int(Vector))
+	}
+
+	if len(Licence) > 0 {
+		reqstr += "&licence=" + Licence
+	}
+
+	if len(Category) > 0 {
+		reqstr += "&category=" + Category
+	}
+
+	if len(Style) > 0 {
+		reqstr += "&style=" + Style
+	}
+
+	req, err := http.NewRequest("GET", reqstr, nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwicos Icons
+	json.Unmarshal(bodyBytes, &nwicos)
+
+	return &nwicos, nil
 }
