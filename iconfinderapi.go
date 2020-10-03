@@ -103,16 +103,28 @@ type Styles struct {
 	Styles []Style `json:"styles"`
 }
 
-// ListAllStyles returns a map of all the styles after can be initalized as "" if you dont want to use it. count should be 0-100
-func (icofdr *Iconfinder) ListAllStyles(count int32, after string) (*Styles, error) {
-	if count > 100 || count < 0 {
-		return nil, errors.New("OutOfBound")
+// ListAllStyles returns a map of all the styles after can be initalized as "" if you dont want to use it.
+// Count should be 0-100
+// Set unused filters to -1 for ints and "" for strings
+func (icofdr *Iconfinder) ListAllStyles(Count int32, After string) (*Styles, error) {
+	var reqstr string = apiuri + "styles"
+	if Count == -1 || len(After) != 0 {
+		reqstr += "?"
+	}
+	prefix := false
+	if Count != -1 {
+		if Count > 100 || Count < 0 {
+			return nil, errors.New("OutOfBound")
+		}
+		reqstr += "count=" + strconv.Itoa(int(Count))
+		prefix = true
 	}
 
-	var reqstr string = apiuri + "styles?count=" + strconv.Itoa(int(count))
-
-	if len(after) > 0 {
-		reqstr = reqstr + "&after=" + after
+	if len(After) != 0 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "after=" + After
 	}
 
 	req, err := http.NewRequest("GET", reqstr, nil)
@@ -208,16 +220,28 @@ type Catagories struct {
 	Styles []Style `json:"categories"`
 }
 
-// ListAllCategories lists all catagories. after can be initalized as "" if you dont want to use it. count should be 0-100
-func (icofdr *Iconfinder) ListAllCategories(count int32, after string) (*Catagories, error) {
-	if count > 100 || count < 0 {
-		return nil, errors.New("OutOfBound")
+// ListAllCategories lists all catagories.
+// Count should be 0-100 or -1
+// Set unused filters to -1 for ints and "" for strings
+func (icofdr *Iconfinder) ListAllCategories(Count int32, After string) (*Catagories, error) {
+	var reqstr string = apiuri + "categories"
+	if Count == -1 || len(After) != 0 {
+		reqstr += "?"
+	}
+	prefix := false
+	if Count != -1 {
+		if Count > 100 || Count < 0 {
+			return nil, errors.New("OutOfBound")
+		}
+		reqstr += "count=" + strconv.Itoa(int(Count))
+		prefix = true
 	}
 
-	var reqstr string = apiuri + "categories?count=" + strconv.Itoa(int(count))
-
-	if len(after) > 0 {
-		reqstr = reqstr + "&after=" + after
+	if len(After) != 0 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "after=" + After
 	}
 
 	req, err := http.NewRequest("GET", reqstr, nil)
@@ -243,6 +267,137 @@ func (icofdr *Iconfinder) ListAllCategories(count int32, after string) (*Catagor
 
 // ListAllCatagoriesFast returns all posible styles without any variables
 func (icofdr *Iconfinder) ListAllCatagoriesFast() *Catagories {
-	cats, _ := icofdr.ListAllCategories(100, "")
+	cats, _ := icofdr.ListAllCategories(-1, "")
 	return cats
+}
+
+// Author contains details about an author
+type Author struct {
+	Name          string `json:"name"`
+	IconsetsCount int    `json:"iconsets_count"`
+	AuthorID      uint32 `json:"author_id"`
+	WebsiteURL    string `json:"website_url"`
+}
+
+// GetAuthorDetails Get details about a specific author identified by a unique ID.
+func (icofdr *Iconfinder) GetAuthorDetails(AuthorID int32) *Author {
+	req, err := http.NewRequest("GET", apiuri+"authors/"+strconv.Itoa(int(AuthorID)), nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwatorinfo Author
+	json.Unmarshal(bodyBytes, &nwatorinfo)
+
+	return &nwatorinfo
+}
+
+// Price contains details about a price on an iconset
+type Price struct {
+	License  License `json:"license"`
+	Currency string  `json:"currency"`
+	Price    float32 `json:"price"`
+}
+
+// Iconset contains details about an icon
+type Iconset struct {
+	AllIconsGlyph bool       `json:"are_all_icons_glyph"`
+	Styles        []Style    `json:"styles"`
+	IsPremium     bool       `json:"is_Premium"`
+	Identifier    string     `json:"identifier"`
+	Prices        []Price    `json:"prices"`
+	Author        Author     `json:"author"`
+	IconsetID     int        `json:"iconset_id"`
+	Type          string     `json:"type"`
+	PublishedAt   string     `json:"published_at"`
+	Name          string     `json:"name"`
+	IconsCount    int        `json:"icons_count"`
+	Catagories    []Category `json:"categories"`
+}
+
+// IconSets contains multiple iconsets
+type IconSets struct {
+	TotalCount int       `json:"total_count"`
+	IconSets   []Iconset `json:"iconsets"`
+}
+
+// ListIconSetsOfStyle returns IconSets by a specific Style
+// Count is a range of 0 - 100 or -1
+// Set unused filters to -1 for ints and "" for strings
+func (icofdr *Iconfinder) ListIconSetsOfStyle(StyleIdentifier string, Count int32, After int32, Premium int8, Vector int8, Licence string) (*IconSets, error) {
+	var reqstr string = apiuri + "styles/" + StyleIdentifier + "/iconsets"
+
+	// Check and apply filters to strings
+	if Count == -1 || After == -1 || Premium == -1 || Vector == -1 || len(Licence) != 0 {
+		reqstr += "?"
+	}
+	prefix := false
+	if Count != -1 {
+		if Count > 100 || Count < 0 {
+			return nil, errors.New("OutOfBound")
+		}
+		reqstr += "count=" + strconv.Itoa(int(Count))
+		prefix = true
+	}
+
+	if After != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "after=" + strconv.Itoa(int(After))
+		prefix = true
+	}
+
+	if Premium != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "premium=" + strconv.Itoa(int(Premium))
+		prefix = true
+	}
+
+	if Vector != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "vector=" + strconv.Itoa(int(Vector))
+		prefix = true
+	}
+
+	if len(Licence) >= 0 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "Licence=" + Licence
+	}
+
+	req, err := http.NewRequest("GET", reqstr, nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwicosets IconSets
+	json.Unmarshal(bodyBytes, &nwicosets)
+
+	return &nwicosets, nil
 }
