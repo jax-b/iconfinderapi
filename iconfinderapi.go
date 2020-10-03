@@ -3,6 +3,7 @@ package iconfinderapi
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -309,26 +310,52 @@ type Price struct {
 	Price    float32 `json:"price"`
 }
 
-// Iconset contains details about an icon
-type Iconset struct {
+// IconSet contains details about an icon
+type IconSet struct {
 	AllIconsGlyph bool       `json:"are_all_icons_glyph"`
 	Styles        []Style    `json:"styles"`
 	IsPremium     bool       `json:"is_Premium"`
 	Identifier    string     `json:"identifier"`
 	Prices        []Price    `json:"prices"`
-	Author        Author     `json:"author"`
+	Author        User       `json:"author"`
 	IconsetID     int        `json:"iconset_id"`
 	Type          string     `json:"type"`
 	PublishedAt   string     `json:"published_at"`
+	WebsiteURL    string     `json:"website_url"`
+	License       License    `json:"license"`
 	Name          string     `json:"name"`
+	ReadMe        string     `json:"readme"`
 	IconsCount    int        `json:"icons_count"`
 	Catagories    []Category `json:"categories"`
+}
+
+// GetIconSetDetails Get details about a specific icon set
+func (icofdr *Iconfinder) GetIconSetDetails(IconsetID int32) *IconSet {
+	req, err := http.NewRequest("GET", apiuri+"iconsets/"+strconv.Itoa(int(IconsetID)), nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwicoset IconSet
+	json.Unmarshal(bodyBytes, &nwicoset)
+
+	return &nwicoset
 }
 
 // IconSets contains multiple iconsets
 type IconSets struct {
 	TotalCount int       `json:"total_count"`
-	IconSets   []Iconset `json:"iconsets"`
+	IconSets   []IconSet `json:"iconsets"`
 }
 
 // ListIconSetsOfStyle returns IconSets by a specific Style
@@ -374,7 +401,7 @@ func (icofdr *Iconfinder) ListIconSetsOfStyle(StyleIdentifier string, Count int3
 		prefix = true
 	}
 
-	if len(Licence) >= 0 {
+	if len(Licence) > 0 {
 		if prefix {
 			reqstr += "&"
 		}
@@ -395,6 +422,220 @@ func (icofdr *Iconfinder) ListIconSetsOfStyle(StyleIdentifier string, Count int3
 
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwicosets IconSets
+	json.Unmarshal(bodyBytes, &nwicosets)
+
+	return &nwicosets, nil
+}
+
+// ListIconSetsOfAuthor returns IconSets by a specific Author
+// Count is a range of 0 - 100 or -1
+// Set unused filters to -1 for ints and "" for strings
+func (icofdr *Iconfinder) ListIconSetsOfAuthor(AuthorID int32, Count int32, After int32, Premium int8, Vector int8, Licence string) (*IconSets, error) {
+	var reqstr string = apiuri + "authors/" + strconv.Itoa(int(AuthorID)) + "/iconsets"
+
+	// Check and apply filters to strings
+	if Count == -1 || After == -1 || Premium == -1 || Vector == -1 || len(Licence) != 0 {
+		reqstr += "?"
+	}
+	prefix := false
+	if Count != -1 {
+		if Count > 100 || Count < 0 {
+			return nil, errors.New("OutOfBound")
+		}
+		reqstr += "count=" + strconv.Itoa(int(Count))
+		prefix = true
+	}
+
+	if After != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "after=" + strconv.Itoa(int(After))
+		prefix = true
+	}
+
+	if Premium != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "premium=" + strconv.Itoa(int(Premium))
+		prefix = true
+	}
+
+	if Vector != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "vector=" + strconv.Itoa(int(Vector))
+		prefix = true
+	}
+
+	if len(Licence) > 0 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "Licence=" + Licence
+	}
+
+	req, err := http.NewRequest("GET", reqstr, nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwicosets IconSets
+	json.Unmarshal(bodyBytes, &nwicosets)
+
+	return &nwicosets, nil
+}
+
+// ListIconSetsOfUser returns IconSets by a specific User
+// Count is a range of 0 - 100 or -1
+// Set unused filters to -1 for ints and "" for strings
+func (icofdr *Iconfinder) ListIconSetsOfUser(UserID string, Count int32, After int32, Premium int8, Vector int8, Licence string) (*IconSets, error) {
+	var reqstr string = apiuri + "users/" + UserID + "/iconsets"
+
+	// Check and apply filters to strings
+	if Count == -1 || After == -1 || Premium == -1 || Vector == -1 || len(Licence) != 0 {
+		reqstr += "?"
+	}
+	prefix := false
+	if Count != -1 {
+		if Count > 100 || Count < 0 {
+			return nil, errors.New("OutOfBound")
+		}
+		reqstr += "count=" + strconv.Itoa(int(Count))
+		prefix = true
+	}
+
+	if After != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "after=" + strconv.Itoa(int(After))
+		prefix = true
+	}
+
+	if Premium != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "premium=" + strconv.Itoa(int(Premium))
+		prefix = true
+	}
+
+	if Vector != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "vector=" + strconv.Itoa(int(Vector))
+		prefix = true
+	}
+
+	if len(Licence) > 0 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "Licence=" + Licence
+	}
+
+	req, err := http.NewRequest("GET", reqstr, nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwicosets IconSets
+	json.Unmarshal(bodyBytes, &nwicosets)
+
+	return &nwicosets, nil
+}
+
+// ListIconSetsOfCategory returns IconSets by a specific User
+// Count is a range of 0 - 100 or -1
+// Set unused filters to -1 for ints and "" for strings
+func (icofdr *Iconfinder) ListIconSetsOfCategory(CatagoryID string, Count int32, After int32, Premium int8, Vector int8, Licence string) (*IconSets, error) {
+	var reqstr string = apiuri + "categories/" + CatagoryID + "/iconsets"
+
+	// Check and apply filters to strings
+	if Count == -1 || After == -1 || Premium == -1 || Vector == -1 || len(Licence) != 0 {
+		reqstr += "?"
+	}
+
+	prefix := false
+	if Count != -1 {
+		if Count > 100 || Count < 0 {
+			return nil, errors.New("OutOfBound")
+		}
+		reqstr += "count=" + strconv.Itoa(int(Count))
+		prefix = true
+	}
+
+	if After != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "after=" + strconv.Itoa(int(After))
+		prefix = true
+	}
+
+	if Premium != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "premium=" + strconv.Itoa(int(Premium))
+		prefix = true
+	}
+
+	if Vector != -1 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "vector=" + strconv.Itoa(int(Vector))
+		prefix = true
+	}
+
+	if len(Licence) > 0 {
+		if prefix {
+			reqstr += "&"
+		}
+		reqstr += "Licence=" + Licence
+	}
+
+	req, err := http.NewRequest("GET", reqstr, nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	bodyString := string(bodyBytes)
+	fmt.Println("API Response as String:\n" + bodyString)
 
 	var nwicosets IconSets
 	json.Unmarshal(bodyBytes, &nwicosets)
