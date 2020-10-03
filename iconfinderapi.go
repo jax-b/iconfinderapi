@@ -8,6 +8,7 @@ import (
 	"strconv"
 )
 
+// Iconfinder is the object that contains all of the api interfacing commands
 type Iconfinder struct {
 	apikey string
 }
@@ -27,7 +28,7 @@ func (icofdr Iconfinder) ChangeAPIKey(usrAPIKey string) {
 	icofdr.apikey = usrAPIKey
 }
 
-// UserInfo Contains all of the information returned by UserIDDetails
+// User Contains all of the information returned by UserIDDetails
 type User struct {
 	UserID          int32  `json:"user_id"`
 	SocialTwitter   string `json:"social_twitter"`
@@ -93,4 +94,45 @@ func (icofdr *Iconfinder) GetStyleDetails(styleID string) *Style {
 	json.Unmarshal(bodyBytes, &nwstlinfo)
 
 	return &nwstlinfo
+}
+
+//Styles holds multiple style objects
+type Styles struct {
+	Total  int     `json:"total_count"`
+	Styles []Style `json:"styles"`
+}
+
+// ListAllStyles returns a map of all the styles after can be initalized as "" if you dont want to use it
+func (icofdr *Iconfinder) ListAllStyles(count int32, after string) *Styles {
+
+	var reqstr string = apiuri + "styles?count=" + strconv.Itoa(int(count))
+
+	if len(after) > 0 {
+		reqstr = reqstr + "&after=" + after
+	}
+
+	req, err := http.NewRequest("GET", reqstr, nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwstlsinfo Styles
+	json.Unmarshal(bodyBytes, &nwstlsinfo)
+
+	return &nwstlsinfo
+}
+
+// ListAllStylesFast returns all posible styles without any variables
+func (icofdr *Iconfinder) ListAllStylesFast() *Styles {
+	return icofdr.ListAllStyles(100, "")
 }
