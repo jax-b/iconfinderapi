@@ -1,9 +1,11 @@
 package iconfinderapi
 
 import (
-	"net/http"
 	"encoding/json"
 	"io/ioutil"
+	"log"
+	"net/http"
+	"strconv"
 )
 
 type Iconfinder struct {
@@ -26,34 +28,69 @@ func (icofdr Iconfinder) ChangeAPIKey(usrAPIKey string) {
 }
 
 // UserInfo Contains all of the information returned by UserIDDetails
-type UserInfo struct {
-	UserID          int32  'json:"user_id"'
-	SocialTwitter   string 'json:"social_twitter"'
-	WebsiteURL      string 'json:"website_url"'
-	Company         string 'json:"company"'
-	Location        string 'json:"location"'
-	IsDesigner      bool   'json:"is_designer"'
-	IconsetsCount   uint32 'json:"iconsets_count"'
-	Name            string 'json:"name"'
-	SocialInstagram string 'json:"social_instagram"'
-	Username        string 'json:"username"'
-	SocialBehance   string 'json:"social_behance"'
-	SocialDribbble  string 'json:"social_dribbble"'
+type User struct {
+	UserID          int32  `json:"user_id"`
+	SocialTwitter   string `json:"social_twitter"`
+	WebsiteURL      string `json:"website_url"`
+	Company         string `json:"company"`
+	Location        string `json:"location"`
+	IsDesigner      bool   `json:"is_designer"`
+	IconsetsCount   uint32 `json:"iconsets_count"`
+	Name            string `json:"name"`
+	SocialInstagram string `json:"social_instagram"`
+	Username        string `json:"username"`
+	SocialBehance   string `json:"social_behance"`
+	SocialDribbble  string `json:"social_dribbble"`
 }
 
-// UserIDDetails returns information about the specifyed user
-func (icofdr *Iconfinder) UserIDDetails(id int32) *UserInfo {
-	resp, err := http.Get(apiuri + "user_id")
-	resp.Header.Add("Bearer", apikey)
+// GetUserIDDetails returns information about the specifyed user
+func (icofdr *Iconfinder) GetUserIDDetails(id int32) *User {
+	req, err := http.NewRequest("GET", apiuri+"users/"+strconv.Itoa(int(id)), nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
-        log.Fatalln(err)
+		log.Println("Error on response.\n[ERRO] -", err)
 	}
-	
+
 	defer resp.Body.Close()
 	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 
-	var nwusrinfo UserInfo
-	json.Unmarshal(bodyBytes, &todoStruct)
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
 
-	return nwusrinfo
+	var nwusrinfo User
+	json.Unmarshal(bodyBytes, &nwusrinfo)
+
+	return &nwusrinfo
+}
+
+// Style Object for containing a style and its details
+type Style struct {
+	Identifier string `json:"identifier"`
+	Name       string `json:"name"`
+}
+
+// GetStyleDetails returns a Style strut with information about the requested style
+func (icofdr *Iconfinder) GetStyleDetails(styleID string) *Style {
+	req, err := http.NewRequest("GET", apiuri+"styles/"+styleID, nil)
+	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("Error on response.\n[ERRO] -", err)
+	}
+
+	defer resp.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var nwstlinfo Style
+	json.Unmarshal(bodyBytes, &nwstlinfo)
+
+	return &nwstlinfo
 }
