@@ -31,7 +31,7 @@ func NewIconFinder(usrAPIKey string) *Iconfinder {
 }
 
 // ChangeAPIKey allows the user to change the api key after initilization
-func (icofdr Iconfinder) ChangeAPIKey(usrAPIKey string) {
+func (icofdr *Iconfinder) ChangeAPIKey(usrAPIKey string) {
 	icofdr.apikey = usrAPIKey
 }
 
@@ -988,7 +988,7 @@ func (icofdr *Iconfinder) SearchIcons(Query string, Count int32, Offset int32, P
 		reqstr += "&style=" + Style
 	}
 
-	fmt.Println(reqstr)
+	// fmt.Println(reqstr)
 
 	req, err := http.NewRequest("GET", reqstr, nil)
 	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
@@ -1002,8 +1002,8 @@ func (icofdr *Iconfinder) SearchIcons(Query string, Count int32, Offset int32, P
 	defer resp.Body.Close()
 	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 
-	bodyString := string(bodyBytes)
-	fmt.Println("API Response as String:\n" + bodyString)
+	// bodyString := string(bodyBytes)
+	// fmt.Println("API Response as String:\n" + bodyString)
 
 	var badreq badrequest
 	json.Unmarshal(bodyBytes, &badreq)
