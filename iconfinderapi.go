@@ -15,6 +15,11 @@ type Iconfinder struct {
 	apikey string
 }
 
+type badrequest struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
+}
+
 const apiuri = "https://api.iconfinder.com/v4/"
 
 // NewIconFinder returns an iconfinder object
@@ -47,7 +52,7 @@ type User struct {
 }
 
 // GetUserIDDetails returns information about the specifyed user
-func (icofdr *Iconfinder) GetUserIDDetails(id int32) *User {
+func (icofdr *Iconfinder) GetUserIDDetails(id int32) (*User, error) {
 	req, err := http.NewRequest("GET", apiuri+"users/"+strconv.Itoa(int(id)), nil)
 	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
 
@@ -63,10 +68,17 @@ func (icofdr *Iconfinder) GetUserIDDetails(id int32) *User {
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwusrinfo User
 	json.Unmarshal(bodyBytes, &nwusrinfo)
 
-	return &nwusrinfo
+	return &nwusrinfo, nil
 }
 
 // Style Object for containing a style and its details
@@ -76,7 +88,7 @@ type Style struct {
 }
 
 // GetStyleDetails returns a Style strut with information about the requested style
-func (icofdr *Iconfinder) GetStyleDetails(styleID string) *Style {
+func (icofdr *Iconfinder) GetStyleDetails(styleID string) (*Style, error) {
 	req, err := http.NewRequest("GET", apiuri+"styles/"+styleID, nil)
 	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
 
@@ -92,10 +104,17 @@ func (icofdr *Iconfinder) GetStyleDetails(styleID string) *Style {
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwstlinfo Style
 	json.Unmarshal(bodyBytes, &nwstlinfo)
 
-	return &nwstlinfo
+	return &nwstlinfo, nil
 }
 
 //Styles holds multiple style objects
@@ -143,6 +162,13 @@ func (icofdr *Iconfinder) ListAllStyles(Count int32, After string) (*Styles, err
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwstlsinfo Styles
 	json.Unmarshal(bodyBytes, &nwstlsinfo)
 
@@ -164,7 +190,7 @@ type License struct {
 }
 
 // GetLicenseDetails retuns details about the licence
-func (icofdr *Iconfinder) GetLicenseDetails(licenseID int32) *License {
+func (icofdr *Iconfinder) GetLicenseDetails(licenseID int32) (*License, error) {
 	req, err := http.NewRequest("GET", apiuri+"licenses/"+strconv.Itoa(int(licenseID)), nil)
 	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
 
@@ -180,10 +206,17 @@ func (icofdr *Iconfinder) GetLicenseDetails(licenseID int32) *License {
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwlicinfo License
 	json.Unmarshal(bodyBytes, &nwlicinfo)
 
-	return &nwlicinfo
+	return &nwlicinfo, nil
 }
 
 // Category Object for containing a category and its details
@@ -193,7 +226,7 @@ type Category struct {
 }
 
 // GetCategoryDetails Get details about a specific category identified by its identifier.
-func (icofdr *Iconfinder) GetCategoryDetails(CategoryIdentifier string) *Category {
+func (icofdr *Iconfinder) GetCategoryDetails(CategoryIdentifier string) (*Category, error) {
 	req, err := http.NewRequest("GET", apiuri+"categories/"+CategoryIdentifier, nil)
 	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
 
@@ -209,10 +242,17 @@ func (icofdr *Iconfinder) GetCategoryDetails(CategoryIdentifier string) *Categor
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwcatinfo Category
 	json.Unmarshal(bodyBytes, &nwcatinfo)
 
-	return &nwcatinfo
+	return &nwcatinfo, nil
 }
 
 // Catagories holds multiple style objects
@@ -261,6 +301,13 @@ func (icofdr *Iconfinder) ListAllCategories(Count int32, After string) (*Catagor
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwcatsinfo Catagories
 	json.Unmarshal(bodyBytes, &nwcatsinfo)
 
@@ -282,7 +329,7 @@ type Author struct {
 }
 
 // GetAuthorDetails Get details about a specific author identified by a unique ID.
-func (icofdr *Iconfinder) GetAuthorDetails(AuthorID int32) *Author {
+func (icofdr *Iconfinder) GetAuthorDetails(AuthorID int32) (*Author, error) {
 	req, err := http.NewRequest("GET", apiuri+"authors/"+strconv.Itoa(int(AuthorID)), nil)
 	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
 
@@ -298,10 +345,17 @@ func (icofdr *Iconfinder) GetAuthorDetails(AuthorID int32) *Author {
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwatorinfo Author
 	json.Unmarshal(bodyBytes, &nwatorinfo)
 
-	return &nwatorinfo
+	return &nwatorinfo, nil
 }
 
 // Price contains details about a price on an iconset
@@ -331,7 +385,7 @@ type IconSet struct {
 }
 
 // GetIconSetDetails Get details about a specific icon set
-func (icofdr *Iconfinder) GetIconSetDetails(IconsetID int32) *IconSet {
+func (icofdr *Iconfinder) GetIconSetDetails(IconsetID int32) (*IconSet, error) {
 	req, err := http.NewRequest("GET", apiuri+"iconsets/"+strconv.Itoa(int(IconsetID)), nil)
 	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
 
@@ -346,11 +400,17 @@ func (icofdr *Iconfinder) GetIconSetDetails(IconsetID int32) *IconSet {
 
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
 
 	var nwicoset IconSet
 	json.Unmarshal(bodyBytes, &nwicoset)
 
-	return &nwicoset
+	return &nwicoset, nil
 }
 
 // IconSets contains multiple iconsets
@@ -424,6 +484,13 @@ func (icofdr *Iconfinder) ListIconSetsOfStyle(StyleIdentifier string, Count int3
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwicosets IconSets
 	json.Unmarshal(bodyBytes, &nwicosets)
 
@@ -495,6 +562,13 @@ func (icofdr *Iconfinder) ListIconSetsOfAuthor(AuthorID int32, Count int32, Afte
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwicosets IconSets
 	json.Unmarshal(bodyBytes, &nwicosets)
 
@@ -565,6 +639,13 @@ func (icofdr *Iconfinder) ListIconSetsOfUser(UserID string, Count int32, After i
 
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
 
 	var nwicosets IconSets
 	json.Unmarshal(bodyBytes, &nwicosets)
@@ -638,6 +719,13 @@ func (icofdr *Iconfinder) ListIconSetsOfCategory(CatagoryID string, Count int32,
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwicosets IconSets
 	json.Unmarshal(bodyBytes, &nwicosets)
 
@@ -709,6 +797,13 @@ func (icofdr *Iconfinder) ListPublicIconSets(Count int32, After int32, Premium i
 
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
+
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
 
 	var nwicosets IconSets
 	json.Unmarshal(bodyBytes, &nwicosets)
@@ -814,6 +909,13 @@ func (icofdr *Iconfinder) IconsInSet(IconsetID int32, Query string, Count int32,
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
+
 	var nwicos Icons
 	json.Unmarshal(bodyBytes, &nwicos)
 
@@ -821,7 +923,7 @@ func (icofdr *Iconfinder) IconsInSet(IconsetID int32, Query string, Count int32,
 }
 
 // GetIconDetails gets all details for a specific icon
-func (icofdr *Iconfinder) GetIconDetails(IconID int32) *Icon {
+func (icofdr *Iconfinder) GetIconDetails(IconID int32) (*Icon, error) {
 	req, err := http.NewRequest("GET", apiuri+"icons/"+strconv.Itoa(int(IconID)), nil)
 	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
 
@@ -837,17 +939,23 @@ func (icofdr *Iconfinder) GetIconDetails(IconID int32) *Icon {
 	// bodyString := string(bodyBytes)
 	// fmt.Println("API Response as String:\n" + bodyString)
 
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
 	var nwico Icon
 	json.Unmarshal(bodyBytes, &nwico)
 
-	return &nwico
+	return &nwico, nil
 }
 
 // SearchIcons Look for a icon
 // Count is a range of 0 - 100 or -1
 // Set unused filters to -1 for ints and "" for strings
 func (icofdr *Iconfinder) SearchIcons(Query string, Count int32, Offset int32, Premium int8, Vector int8, Licence string, Category string, Style string) (*Icons, error) {
-	var reqstr string = apiuri + "icons/Search?query=" + Query
+	var reqstr string = apiuri + "icons/search?query=" + Query
 
 	if Count != -1 {
 		if Count > 100 || Count < 0 {
@@ -880,6 +988,8 @@ func (icofdr *Iconfinder) SearchIcons(Query string, Count int32, Offset int32, P
 		reqstr += "&style=" + Style
 	}
 
+	fmt.Println(reqstr)
+
 	req, err := http.NewRequest("GET", reqstr, nil)
 	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
 
@@ -892,8 +1002,15 @@ func (icofdr *Iconfinder) SearchIcons(Query string, Count int32, Offset int32, P
 	defer resp.Body.Close()
 	bodyBytes, _ := ioutil.ReadAll(resp.Body)
 
-	// bodyString := string(bodyBytes)
-	// fmt.Println("API Response as String:\n" + bodyString)
+	bodyString := string(bodyBytes)
+	fmt.Println("API Response as String:\n" + bodyString)
+
+	var badreq badrequest
+	json.Unmarshal(bodyBytes, &badreq)
+	if badreq.Code == "not_found" {
+		fmt.Println(badreq)
+		return nil, errors.New("Bad Request")
+	}
 
 	var nwicos Icons
 	json.Unmarshal(bodyBytes, &nwicos)
