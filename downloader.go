@@ -1,7 +1,6 @@
 package iconfinderapi
 
 import (
-	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
@@ -11,7 +10,6 @@ import (
 
 // DownloadIcon Downloads a specified icon into a image.Imgae
 func (icofdr *Iconfinder) DownloadIcon(srcIMG Image) image.Image {
-	fmt.Println(srcIMG.DownloadURL)
 	req, err := http.NewRequest("GET", srcIMG.DownloadURL, nil)
 	req.Header.Add("Authorization", "Bearer "+icofdr.apikey)
 
